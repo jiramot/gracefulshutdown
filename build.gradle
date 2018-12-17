@@ -1,0 +1,108 @@
+buildscript {
+    ext {
+        kotlinVersion = '1.3.11'
+        springBootVersion = '2.1.1.RELEASE'
+    }
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+        classpath("org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}")
+        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:${kotlinVersion}")
+        classpath("org.jetbrains.kotlin:kotlin-allopen:${kotlinVersion}")
+    }
+}
+
+apply plugin: 'maven'
+apply plugin: 'kotlin'
+apply plugin: 'kotlin-spring'
+apply plugin: 'eclipse'
+apply plugin: 'org.springframework.boot'
+apply plugin: 'io.spring.dependency-management'
+apply plugin: 'signing'
+
+group = 'com.github.jiramot'
+archivesBaseName = "gracefulshutdown"
+version = "0.0.1"
+
+compileKotlin {
+    kotlinOptions {
+        freeCompilerArgs = ["-Xjsr305=strict"]
+        jvmTarget = "1.8"
+    }
+}
+
+compileTestKotlin {
+    kotlinOptions {
+        freeCompilerArgs = ["-Xjsr305=strict"]
+        jvmTarget = "1.8"
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+ext['springCloudVersion'] = 'Finchley.RELEASE'
+
+dependencyManagement {
+    imports {
+        mavenBom "org.springframework.cloud:spring-cloud-dependencies:${springCloudVersion}"
+    }
+}
+
+dependencies {
+    implementation('org.springframework.boot:spring-boot-starter-web')
+    implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
+    testImplementation('org.springframework.boot:spring-boot-starter-test')
+}
+
+bootJar.enabled = false
+jar.enabled = true
+
+uploadArchives {
+    repositories {
+        mavenDeployer {
+
+            // Sign POM
+            beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
+
+            // Destination
+            repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2/") {
+                authentication(userName: ossrhUsername, password: ossrhPassword)
+            }
+            snapshotRepository(url: "https://oss.sonatype.org/content/repositories/snapshots/") {
+                authentication(userName: ossrhUsername, password: ossrhPassword)
+            }
+
+            // Add required metadata to POM
+            pom.project {
+                name 'JRM Security'
+                packaging 'jar'
+                description 'Spring security extension with JWT'
+                url 'https://github.com/jiramot/gracefulshutdown'
+
+                scm {
+                    connection 'scm:git:git://github.com/jiramot/gracefulshutdown.git'
+                    developerConnection 'scm:git:ssh://github.com/jiramot/gracefulshutdown.git'
+                    url 'https://github.com/jiramot/gracefulshutdown'
+                }
+
+                licenses {
+                    license {
+                        name 'The Apache License, Version 2.0'
+                        url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+                    }
+                }
+
+                developers {
+                    developer {
+                        id 'jiramot'
+                        name 'Watchanon Numnam'
+                        email 'jiramot@gmail.com'
+                    }
+                }
+            }
+        }
+    }
+}
